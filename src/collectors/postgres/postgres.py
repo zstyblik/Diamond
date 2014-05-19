@@ -39,10 +39,10 @@ class PostgresqlCollector(diamond.collector.Collector):
             'underscore': 'Convert _ to .',
             'extended': 'Enable collection of extended database stats.',
             'metrics': 'List of enabled metrics to collect',
-            'pg_version':
-            "The version of postgres that you'll be monitoring eg in format 9.2"
-            'has_admin':
-            'Admin privileges are required to execute some queries.',
+            'pg_version': "The version of postgres that you'll be monitoring"\
+                    " eg. in format 9.2",
+            'has_admin': 'Admin privileges are required to execute some'\
+                    ' queries.',
         })
         return config_help
 
