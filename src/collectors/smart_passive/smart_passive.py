@@ -3,6 +3,56 @@
 """
 Collect pre-scraped data from S.M.A.R.T. Based on smart collector.
 
+# How to make it work
+
+You need a shell script and cron or something which will execute % smartctl; in
+fairly regular intervals.
+
+Shell script can be something basic as:
+
+    #!/bin/sh
+    # 2013/Oct/28 @ Zdenek Styblik <zdenek.styblik@icflix.com>
+    # Desc: script which saves smartctl data for a Nagios check
+    set -e
+    set -u
+
+    STORE_DIR="/var/lib/smartmontools/nagios"
+
+    if [ ! -d "${STORE_DIR}" ]; then
+        mkdir -p "${STORE_DIR}"
+        chmod 755 "${STORE_DIR}"
+    fi
+
+    ID=1
+    for HDD_DEV in $(ls /dev/sd? | sort); do
+        TMP_FILE=$(mktemp -q || true)
+        if [ -z "${TMP_FILE}" ]; then
+            ID=$(($ID + 1))
+            continue
+        fi
+        RC=0
+        OUT_FILE="${STORE_DIR}/hd_${ID}.out"
+        RC_FILE="${STORE_DIR}/hd_${ID}.rc"
+        /usr/sbin/smartctl -b ignore -a -d sat \
+            "${HDD_DEV}" > "${TMP_FILE}" || RC=$?
+        if [ ! -e "${TMP_FILE}" ] || [ ! -s "${TMP_FILE}" ]; then
+            printf "SMART overall-health self-assessment test result: FAILED\n" \
+                > "${TMP_FILE}"
+        fi
+        chmod 644 "${TMP_FILE}"
+        mv "${TMP_FILE}" "${OUT_FILE}"
+        printf "%s" "${RC}" > "${RC_FILE}"
+        ID=$(($ID + 1))
+    done
+    # EOF
+
+Well, this isn't exactly basic, but it will produce '.out' files this collector
+needs. Next thing you need is a cron job like this:
+
+    */20 *  * * *   root    /path/to/smart-scraper.sh
+
+And you're all set.
+
 #### Dependencies
 
  * [smartmontools](http://sourceforge.net/apps/trac/smartmontools/wiki)
